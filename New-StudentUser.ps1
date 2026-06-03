@@ -1,23 +1,14 @@
 #Requires -RunAsAdministrator
 
 $StudentName = "Student"
-$EmptyPassword = [System.Security.SecureString]::new()
-$LocalUser = "$env:COMPUTERNAME\$StudentName"
+$LocalUser = New-Object System.Security.Principal.NTAccount("$env:COMPUTERNAME\$StudentName")
 
 if (Get-LocalUser -Name $StudentName -ErrorAction SilentlyContinue) {
     Write-Host "  [~] User '$StudentName' already exists, skipping creation." -ForegroundColor Yellow
 } else {
-    New-LocalUser -Name $StudentName `
-                  -Password $EmptyPassword `
-                  -FullName "Student" `
-                  -Description "Restricted student account"
-    Add-LocalGroupMember -Group "Users" -Member $StudentName
+    net user $StudentName "" /add /passwordchg:no
+    net localgroup "Users" $StudentName /add
     Write-Host "  [+] User '$StudentName' created." -ForegroundColor Green
-}
-
-$RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
-if (-not (Test-Path $RegPath)) {
-    New-Item -Path $RegPath -Force | Out-Null
 }
 
 $StudentProfile = "C:\Users\$StudentName"
