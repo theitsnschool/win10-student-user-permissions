@@ -40,6 +40,16 @@ winget install Microsoft.VisualStudioCode --scope machine --silent --accept-pack
 
 The `--scope machine` flag installs VS Code to `C:\Program Files\Microsoft VS Code\` making it available to all users.
 
+**Python** is another common case — also installs per-user by default:
+
+```powershell
+winget uninstall Python.Python.3.12
+```
+
+```powershell
+winget install Python.Python.3.12 --scope machine --silent --accept-package-agreements --accept-source-agreements
+```
+
 > Apply the same logic to any other app that was installed per-user. You can check where an app is installed by running `winget list` and looking at the install location, or by checking if the app exists under `C:\Program Files\` (system-wide) vs `C:\Users\<name>\AppData\Local\Programs\` (per-user).
 
 ---
@@ -70,4 +80,4 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 ## Related
 
-- [win10-student-setup](https://github.com/theitsnschool/win10-student-setup) Full lab machine setup: removes bloatware and installs all dev tools
+- [win10-student-setup](https://github.com/theitsnschool/win10-student-setup). Full lab machine setup: removes bloatware and installs all dev tools
