@@ -1,18 +1,23 @@
 #Requires -RunAsAdministrator
 
 $StudentName = "Student"
+$EmptyPassword = [System.Security.SecureString]::new()
+$LocalUser = "$env:COMPUTERNAME\$StudentName"
 
 if (Get-LocalUser -Name $StudentName -ErrorAction SilentlyContinue) {
     Write-Host "  [~] User '$StudentName' already exists, skipping creation." -ForegroundColor Yellow
 } else {
     New-LocalUser -Name $StudentName `
-                  -NoPassword `
+                  -Password $EmptyPassword `
                   -FullName "Student" `
-                  -Description "Restricted student account" `
-                  -PasswordNeverExpires `
-                  -UserMayNotChangePassword
+                  -Description "Restricted student account"
     Add-LocalGroupMember -Group "Users" -Member $StudentName
     Write-Host "  [+] User '$StudentName' created." -ForegroundColor Green
+}
+
+$RegPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"
+if (-not (Test-Path $RegPath)) {
+    New-Item -Path $RegPath -Force | Out-Null
 }
 
 $StudentProfile = "C:\Users\$StudentName"
@@ -21,7 +26,7 @@ New-Item -ItemType Directory -Path $DesktopPath -Force | Out-Null
 
 $Acl = Get-Acl $DesktopPath
 $FullAccess = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    $StudentName, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+    $LocalUser, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
 $Acl.SetAccessRule($FullAccess)
 Set-Acl -Path $DesktopPath -AclObject $Acl
 Write-Host "  [+] Full write access granted on Desktop." -ForegroundColor Green
@@ -42,7 +47,7 @@ foreach ($Path in $RestrictedPaths) {
     if (Test-Path $Path) {
         $Acl = Get-Acl $Path
         $DenyWrite = New-Object System.Security.AccessControl.FileSystemAccessRule(
-            $StudentName, "Write,CreateFiles,CreateDirectories,Delete",
+            $LocalUser, "Write,CreateFiles,CreateDirectories,Delete",
             "ContainerInherit,ObjectInherit", "None", "Deny")
         $Acl.AddAccessRule($DenyWrite)
         Set-Acl -Path $Path -AclObject $Acl
